@@ -13,7 +13,7 @@ from streamlit_option_menu import option_menu
 @st.cache_data
 def load_location_data():    
     #file_path = "file_content.txt"
-    file_path = "K:/pyenv/py311/py_stream/file_content.txt"
+    file_path = "file_content.txt"
     
     if not os.path.exists(file_path):
         st.error(f"'{file_path}' 파일을 찾을 수 없습니다.")
@@ -332,4 +332,5 @@ def main():
                 st.warning("데이터가 없습니다.")
 
 if __name__ == "__main__":
+
     main()
