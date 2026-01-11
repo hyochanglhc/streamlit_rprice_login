@@ -1,0 +1,9 @@
+streamlit
+pandas
+pymysql
+sqlalchemy
+cryptography
+xlsxwriter
+python-dotenv
+streamlit-option_menu
+xlsxwriter
