@@ -301,31 +301,24 @@ def main():
                     "오피스텔 매매": "ot_sale", "오피스텔 전월세": "ot_rent",
                     "연립/다세대 매매": "villa_sale", "연립/다세대 전월세": "villa_rent"
                 }
-                # 테이블 분기 로직
+
                 if selected_type == '아파트 매매':
-                    if sido in big6:
-                        table_name = 'sale_big6'
-                    elif sido in dodo:
-                        table_name = 'sale_dodo'
-                    else:
-                        table_name = 'sale_sma'
+                    if sido in big6: table_name = 'sale_big6'
+                    elif sido in dodo: table_name = 'sale_dodo'
+                    else: table_name = 'sale_sma'
                 elif selected_type == '아파트 전월세' and sido not in sma:
                     table_name = 'rent_notsma'
                 else:
                     table_name = table_map.get(selected_type, "sale_sma")
-        
-                # 쿼리 및 파라미터 구성 (딕셔너리 바인딩 방식)
-                query = f"SELECT * FROM {table_name} WHERE 광역시도 = :sido AND 시자치구 = :sigungu AND 기준월 >= :deal_ymd"
-                params = {
-                    "sido": sido, "sigungu": sigungu, 
-                    "deal_ymd": deal_ymd.strftime('%Y-%m-%d'),
-                    "ex_min": ex_min, "ex_max": ex_max
-                }
+
+                # SQL 실행 (SQLAlchemy 2.0+ 방식 권장)
+                query_str = f"SELECT * FROM {table_name} WHERE 광역시도 = :sido AND 시자치구 = :sigungu AND 기준월 >= :deal_ymd"
+                params = {"sido": sido, "sigungu": sigungu, "deal_ymd": deal_ymd, "ex_min": ex_min, "ex_max": ex_max}
                 
                 if dong != "전체":
-                    query += " AND 법정동 = :dong"
+                    query_str += " AND 법정동 = :dong"
                     params["dong"] = dong
-                query += " AND 전용면적 >= :ex_min AND 전용면적 <= :ex_max LIMIT 5000"
+                query_str += " AND 전용면적 >= :ex_min AND 전용면적 <= :ex_max LIMIT 5000"
                 
                 with st.spinner('테이블 조회 중...'):
                     with engine.connect() as conn:
@@ -360,4 +353,5 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
