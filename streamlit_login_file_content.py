@@ -345,8 +345,8 @@ def main():
         if st.session_state.result_df is not None:
             res_df = st.session_state.result_df
             if not res_df.empty:
-                res_df = res_df[res_df.columns[1:]] #id제외
-                st.dataframe(res_df, use_container_width=True, height=600)
+                res_df = res_df[res_df.columns] 
+                st.dataframe(res_df, use_container_width=True, height=600, hide_index=True)
                 
                 st.markdown(f"""
                     <div class="status-bar">
@@ -365,6 +365,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
