@@ -292,14 +292,40 @@ def main():
             try:
                 engine = get_engine()
                 # 테이블 매핑 로직 (기존 코드 유지)
-                table_map = {"분양권": "bunyang", "아파트 매매": "sale_sma", "아파트 전월세": "rent_sma", "오피스텔 매매": "ot_sale", "오피스텔 전월세": "ot_rent", "연립/다세대 매매": "villa_sale", "연립/다세대 전월세": "villa_rent"}
-                table_name = table_map.get(selected_type, "sale_sma") # 간소화된 예시
-
-                query = text(f"SELECT * FROM {table_name} WHERE 광역시도 = :sido AND 시자치구 = :sigungu AND 기준월 >= :deal_ymd "
-                             f"AND 전용면적 >= :ex_min AND 전용면적 <= :ex_max " + 
-                             ("AND 법정동 = :dong " if dong != "전체" else "") + "LIMIT 5000")
+                sma = ['서울특별시', '인천광역시', '경기도']
+                big6 = ['부산광역시', '대구광역시', '대전광역시', '광주광역시', '울산광역시', '세종특별자치시']
+                dodo = ['강원특별자치도', '충청북도', '충청남도', '전라특별자치도', '전라남도', '경상북도', '경상남도', '제주특별자치도']
                 
-                params = {"sido": sido, "sigungu": sigungu, "deal_ymd": deal_ymd.strftime('%Y-%m-%d'), "ex_min": ex_min, "ex_max": ex_max, "dong": dong}
+                table_map = {
+                    "분양권": "bunyang", "아파트 매매": "sale_sma", "아파트 전월세": "rent_sma",
+                    "오피스텔 매매": "ot_sale", "오피스텔 전월세": "ot_rent",
+                    "연립/다세대 매매": "villa_sale", "연립/다세대 전월세": "villa_rent"
+                }
+                # 테이블 분기 로직
+                if selected_type == '아파트 매매':
+                    if sido in big6:
+                        table_name = 'sale_big6'
+                    elif sido in dodo:
+                        table_name = 'sale_dodo'
+                    else:
+                        table_name = 'sale_sma'
+                elif selected_type == '아파트 전월세' and sido not in sma:
+                    table_name = 'rent_notsma'
+                else:
+                    table_name = table_map.get(selected_type, "sale_sma")
+        
+                # 쿼리 및 파라미터 구성 (딕셔너리 바인딩 방식)
+                query = f"SELECT * FROM {table_name} WHERE 광역시도 = :sido AND 시자치구 = :sigungu AND 기준월 >= :deal_ymd"
+                params = {
+                    "sido": sido, "sigungu": sigungu, 
+                    "deal_ymd": deal_ymd.strftime('%Y-%m-%d'),
+                    "ex_min": ex_min, "ex_max": ex_max
+                }
+                
+                if dong != "전체":
+                    query += " AND 법정동 = :dong"
+                    params["dong"] = dong
+                query += " AND 전용면적 >= :ex_min AND 전용면적 <= :ex_max LIMIT 5000"
                 
                 with st.spinner('테이블 조회 중...'):
                     with engine.connect() as conn:
@@ -334,3 +360,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
