@@ -322,7 +322,7 @@ def main():
                 
                 with st.spinner('테이블 조회 중...'):
                     with engine.connect() as conn:
-                        df = pd.read_sql(query, conn, params=params)
+                        df = pd.read_sql(query_str, conn, params=params)
                         st.session_state.result_df = df
                     engine.dispose()
                     st.rerun()
@@ -353,5 +353,6 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
