@@ -291,7 +291,8 @@ def main():
         if btn_col.button("🚀 조회", use_container_width=True):
             try:
                 engine = get_engine()
-                # 테이블 매핑 로직 (기존 코드 유지)
+
+                # 지역 그룹 정의
                 sma = ['서울특별시', '인천광역시', '경기도']
                 big6 = ['부산광역시', '대구광역시', '대전광역시', '광주광역시', '울산광역시', '세종특별자치시']
                 dodo = ['강원특별자치도', '충청북도', '충청남도', '전라특별자치도', '전라남도', '경상북도', '경상남도', '제주특별자치도']
@@ -301,7 +302,8 @@ def main():
                     "오피스텔 매매": "ot_sale", "오피스텔 전월세": "ot_rent",
                     "연립/다세대 매매": "villa_sale", "연립/다세대 전월세": "villa_rent"
                 }
-
+        
+                # 테이블 분기 로직
                 if selected_type == '아파트 매매':
                     if sido in big6: table_name = 'sale_big6'
                     elif sido in dodo: table_name = 'sale_dodo'
@@ -310,24 +312,34 @@ def main():
                     table_name = 'rent_notsma'
                 else:
                     table_name = table_map.get(selected_type, "sale_sma")
-
-                # SQL 실행 (SQLAlchemy 2.0+ 방식 권장)
-                query_str = f"SELECT * FROM {table_name} WHERE 광역시도 = :sido AND 시자치구 = :sigungu AND 기준월 >= :deal_ymd"
-                params = {"sido": sido, "sigungu": sigungu, "deal_ymd": deal_ymd, "ex_min": ex_min, "ex_max": ex_max}
+        
+                # 쿼리 및 파라미터 구성 (딕셔너리 바인딩 방식)
+                query = f"SELECT * FROM {table_name} WHERE 광역시도 = :sido AND 시자치구 = :sigungu AND 기준월 >= :deal_ymd"
+                params = {
+                    "sido": sido, "sigungu": sigungu, 
+                    "deal_ymd": deal_ymd.strftime('%Y-%m-%d'),
+                    "ex_min": ex_min, "ex_max": ex_max
+                }
                 
                 if dong != "전체":
-                    query_str += " AND 법정동 = :dong"
+                    query += " AND 법정동 = :dong"
                     params["dong"] = dong
-                query_str += " AND 전용면적 >= :ex_min AND 전용면적 <= :ex_max LIMIT 5000"
-                
+                query += " AND 전용면적 >= :ex_min AND 전용면적 <= :ex_max LIMIT 5000"
+        
                 with st.spinner('테이블 조회 중...'):
                     with engine.connect() as conn:
-                        df = pd.read_sql(query_str, conn, params=params)
-                        st.session_state.result_df = df
-                    engine.dispose()
-                    st.rerun()
+                        df = pd.read_sql(text(query), conn, params=params)
+                
+                # 데이터 정제 및 세션 저장
+                if not df.empty:
+                    df.drop('id', axis=1, inplace=True)                
+                    st.session_state.result_df = df.reset_index(drop=True)
+                else:
+                    st.session_state.result_df = pd.DataFrame() # 빈 결과 저장        
+                engine.dispose()
+        
             except Exception as e:
-                st.error(f"조회 중 오류: {e}")
+                st.error(f"조회 중 오류 발생: {e}")
 
         # 결과 출력
         if st.session_state.result_df is not None:
@@ -353,6 +365,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
